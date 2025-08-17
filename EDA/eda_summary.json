@@ -1,0 +1,16 @@
+{
+  "original_rows": 74682,
+  "original_columns": 5,
+  "unique_ids": 12447,
+  "unique_topics": 32,
+  "sentiment_distribution": {
+    "Negative": 22542,
+    "Positive": 20832,
+    "Neutral": 18318,
+    "Irrelevant": 12990
+  },
+  "missing_text": 858,
+  "duplicate_texts": 5190,
+  "inconsistent_labels": 137,
+  "avg_text_length": 108.78365046759285
+}

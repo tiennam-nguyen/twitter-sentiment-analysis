@@ -1,0 +1,11 @@
+# Data files
+*.csv
+twitter_training.csv
+data/
+*.json
+*.parquet
+
+# Model files
+*.pkl
+*.h5
+*.pth
