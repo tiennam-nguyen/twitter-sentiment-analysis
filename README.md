@@ -5,6 +5,7 @@ A complete end-to-end sentiment analysis system using Enhanced BERT model with F
 ## 🚀 Features
 
 - **Enhanced BERT Model**: Custom BERT architecture with multi-head attention and deeper classification layers
+- **ELMo+BERT Model**: Combined architecture using ELMo embeddings and BERT for enhanced performance
 - **4-Class Classification**: Positive, Negative, Neutral, Irrelevant sentiment detection
 - **Google Drive Integration**: Automatic model download from cloud storage
 - **FastAPI Backend**: High-performance REST API with CORS support
@@ -12,6 +13,7 @@ A complete end-to-end sentiment analysis system using Enhanced BERT model with F
 - **Docker Support**: Fully containerized deployment
 - **Intelligent Preprocessing**: Advanced text preprocessing for social media content
 - **Real-time Predictions**: Fast sentiment analysis with confidence scores
+- **Multiple Model Architectures**: Support for both Enhanced BERT and ELMo+BERT models
 
 ## 📁 Project Structure
 
@@ -20,7 +22,9 @@ twitter_sentiment_bert_only/
 ├── backend/
 │   ├── models/
 │   │   ├── __init__.py
-│   │   └── enhanced_bert.py          # Enhanced BERT model architecture
+│   │   ├── enhanced_bert.py          # Enhanced BERT model architecture
+│   │   ├── elmo_bert.py              # ELMo+BERT combined model architecture
+│   │   └── elmo_bert.ipynb           # Jupyter notebook with model development
 │   ├── utils/
 │   │   ├── __init__.py
 │   │   ├── drive_loader.py           # Google Drive API integration
@@ -127,7 +131,7 @@ twitter_sentiment_bert_only/
 
 ## 🔧 API Usage
 
-### Predict Sentiment
+### Predict Sentiment (Enhanced BERT)
 
 **POST** `/predict`
 
@@ -153,6 +157,20 @@ twitter_sentiment_bert_only/
 }
 ```
 
+### Predict Sentiment (ELMo+BERT)
+
+**POST** `/predict-elmo-bert`
+
+Uses the combined ELMo+BERT architecture for potentially enhanced performance:
+
+```json
+{
+  "text": "This movie is absolutely fantastic!"
+}
+```
+
+**Response:** Same format as above, but uses the ELMo+BERT model for prediction.
+
 ### Health Check
 
 **GET** `/`
@@ -161,6 +179,8 @@ Returns API status and model information.
 
 ## 🧠 Model Architecture
 
+### Enhanced BERT Model
+
 The Enhanced BERT model includes:
 
 - **Base BERT**: `bert-base-uncased` as the foundation
@@ -168,6 +188,18 @@ The Enhanced BERT model includes:
 - **Deep Classification**: 3-layer fully connected network with residual connections
 - **Layer Normalization**: Batch normalization for stable training
 - **Dropout**: Regularization to prevent overfitting
+
+### ELMo+BERT Combined Model
+
+The ELMo+BERT model (DICET architecture) combines:
+
+- **ELMo Embeddings**: Contextualized word representations from TensorFlow Hub
+- **BERT Representations**: Pre-trained BERT embeddings
+- **Feature Fusion**: Concatenation of ELMo (1024-dim) and BERT (768-dim) features
+- **BiLSTM Encoder**: Bidirectional LSTM for sequence modeling (256 hidden units)
+- **Additive Attention**: Attention mechanism for feature weighting
+- **Classification Head**: Fully connected layers with dropout and ReLU activation
+- **Gaussian Noise**: Regularization during training (σ=0.3)
 
 ## 📊 Performance
 

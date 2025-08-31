@@ -58,7 +58,7 @@ class DriveModelLoader:
         
         return files[0]['id']
     
-    def download_model_if_needed(self, folder_id, filename="bert_only.pth"):
+    def download_model_if_needed(self, folder_id, filename):
         """Download model file with caching"""
         cache_path = self.cache_dir / filename
         
@@ -98,3 +98,54 @@ class DriveModelLoader:
                 if status:
                     progress = int(status.progress() * 100)
                     print(f"📊 Download progress: {progress}%")
+    
+    def download_enhanced_bert_model(self):
+        """
+        Download the Enhanced Bert model from Google Drive
+        
+        Returns:
+            str: Path to the downloaded model file
+        """
+        folder_id = "1FbfKK1eEw9gS58KMHk4NCprfUIg3SpJM"
+        filename = "bert_only.pth"
+
+        return self.download_model_if_needed(folder_id, filename)
+
+    
+    def download_elmo_bert_model(self):
+        """
+        Download the ELMo+BERT model from Google Drive
+        
+        Returns:
+            str: Path to the downloaded model file
+        """
+        folder_id = "1pr3hPfvm-HzftV2w7NG29hA7dPAPNYW6"
+        filename = "elmo_bert.pth"
+        
+        return self.download_model_if_needed(folder_id, filename)
+    
+    def download_elmo_transformer_model(self):
+        """
+        Download the ELMo Transformer model from Google Drive
+        
+        Returns:
+            str: Path to the downloaded model file
+        """
+        folder_id = "10fyKtCIofs00kncvM89pwlD0xskiLKtG"
+        filename = "elmo_transformer.pth"
+        
+        return self.download_model_if_needed(folder_id, filename)
+    
+    def download_5_embedding_model(self):
+        """
+        Download the ELMo+BERT model from Google Drive
+        
+        Returns:
+            str: Path to the downloaded model file
+        """
+        folder_id = "1ascVmvWBhKTiA4eAZiMRQ20E-aUNuS0T"
+        filename = "5_embedding.pth"
+        
+        return self.download_model_if_needed(folder_id, filename)
+    
+

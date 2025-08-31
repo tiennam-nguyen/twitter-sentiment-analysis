@@ -12,6 +12,11 @@ torchaudio
 transformers
 tokenizers
 
+# TensorFlow for ELMo embeddings
+tensorflow>=2.16.0
+tensorflow-hub
+tensorflow-text
+
 # Data processing
 pandas
 numpy
@@ -20,6 +25,7 @@ scikit-learn
 # Text preprocessing
 emoji
 regex
+stanza
 
 # Google API dependencies
 google-auth
