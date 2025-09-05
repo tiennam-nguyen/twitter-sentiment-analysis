@@ -15,7 +15,6 @@ load_dotenv()
 # Import our custom modules
 from utils import (
     predict_sentiment_elmo_bert,
-    initialize_5_embedding_dependencies,
     setup_device,
     load_tokenizer,
     load_elmo_bert_model
@@ -31,14 +30,6 @@ print("✅ Device and tokenizer setup complete")
 # Initialize models dictionary
 models = {}
 failed_models = {}
-
-# Initialize 5-embedding dependencies at startup
-print("🚀 Initializing 5-embedding dependencies...")
-embedding_5_dependencies = initialize_5_embedding_dependencies()
-if embedding_5_dependencies.get('initialized', False):
-    print("✅ 5-embedding dependencies initialized successfully!")
-else:
-    print(f"❌ 5-embedding dependencies failed: {embedding_5_dependencies.get('error', 'Unknown error')}")
 
 # Model loader configuration
 model_loaders = {
@@ -98,7 +89,7 @@ app = FastAPI(
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:8080", "http://127.0.0.1:8080"],
+    allow_origins=["http://localhost:8080", "http://127.0.0.1:8080", "http://localhost:8000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { AlertCircle, Send, Loader2, TrendingUp, TrendingDown, Minus, HelpCircle, ChevronDown, Check } from 'lucide-react';
 
 // TypeScript interfaces
@@ -13,8 +13,8 @@ interface SentimentResult {
     irrelevant: number;
   };
   processed_text: string;
-  inference_time: number;
-  model_used: string;
+  inference_time?: number;
+  model_used?: string;
 }
 
 interface ApiError {
@@ -22,37 +22,39 @@ interface ApiError {
   detail?: string;
 }
 
-interface ModelStatus {
-  total_models: number;
-  loaded_models: number;
-  available_models: string[];
-  failed_models: Record<string, string>;
-}
-
-// API configuration
-const API_URL = 'http://localhost:8888';
+// API configuration - Different base URLs for different models
+const MODEL_APIS = {
+  'enhanced-bert': 'http://localhost:8888',
+  'elmo-bert': 'http://localhost:8889',
+  'elmo-transformer': 'http://localhost:8890',
+  '5-embedding': 'https://1a8594aead5d.ngrok-free.app'  // ✅ Special ngrok URL
+};
 
 // Model descriptions
 const MODEL_INFO = {
   'enhanced-bert': {
     name: 'Enhanced BERT',
     description: 'BERT with attention mechanism',
-    color: 'blue'
+    color: 'blue',
+    port: 8888
   },
   'elmo-bert': {
     name: 'ELMo + BERT',
     description: 'Combined ELMo and BERT embeddings',
-    color: 'purple'
+    color: 'purple',
+    port: 8889
   },
   'elmo-transformer': {
     name: 'ELMo Transformer',
     description: 'Transformer with ELMo embeddings',
-    color: 'indigo'
+    color: 'indigo',
+    port: 8890
   },
   '5-embedding': {
     name: '5-Embedding',
     description: 'Multi-embedding architecture',
-    color: 'green'
+    color: 'green',
+    port: 'ngrok'  // ✅ Special indicator for ngrok
   }
 };
 
@@ -62,9 +64,10 @@ const SentimentAnalyzer: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [selectedModel, setSelectedModel] = useState<string>('enhanced-bert');
-  const [availableModels, setAvailableModels] = useState<string[]>([]);
-  const [modelStatus, setModelStatus] = useState<ModelStatus | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState<boolean>(false);
+  
+  // All models are available from the start
+  const availableModels = ['enhanced-bert', 'elmo-bert', 'elmo-transformer', '5-embedding'];
   
   const [examples] = useState<string[]>([
     "I absolutely love this product! Best purchase ever!",
@@ -73,13 +76,8 @@ const SentimentAnalyzer: React.FC = () => {
     "The weather is nice today"
   ]);
 
-  // Fetch available models on mount
-  useEffect(() => {
-    fetchModelStatus();
-  }, []);
-
   // Close dropdown when clicking outside
-  useEffect(() => {
+  React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownOpen && !(event.target as Element).closest('.dropdown-container')) {
         setDropdownOpen(false);
@@ -90,28 +88,46 @@ const SentimentAnalyzer: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [dropdownOpen]);
 
-  // Fetch model status
-  const fetchModelStatus = async () => {
-    try {
-      const response = await fetch(`${API_URL}/models/status`);
-      if (response.ok) {
-        const data: ModelStatus = await response.json();
-        setModelStatus(data);
-        setAvailableModels(data.available_models);
-        
-        // Set default to first available model
-        if (data.available_models.length > 0 && !data.available_models.includes(selectedModel)) {
-          setSelectedModel(data.available_models[0]);
-        }
-      }
-    } catch (err) {
-      console.error('Failed to fetch model status:', err);
-      // Fallback to all models if status endpoint fails
-      setAvailableModels(['enhanced-bert', 'elmo-bert', 'elmo-transformer', '5-embedding']);
-    }
+  // Get API URL for the selected model
+  const getApiUrl = (modelName: string) => {
+    return MODEL_APIS[modelName as keyof typeof MODEL_APIS] || MODEL_APIS['enhanced-bert'];
   };
 
-  // Analyze sentiment
+  // Get the complete API endpoint URL
+  const getApiEndpoint = (modelName: string) => {
+    const baseUrl = getApiUrl(modelName);
+    
+    // Special case for 5-embedding: uses direct /predict endpoint
+    if (modelName === '5-embedding') {
+      return `${baseUrl}/predict`;
+    }
+    
+    // For other models: use /predict/{modelName} pattern
+    return `${baseUrl}/predict/${modelName}`;
+  };
+
+  // Add this function to handle both string and number sentiment responses
+  const normalizeSentiment = (result: any) => {
+    // If predicted_class is already a string, use it directly
+    if (typeof result.predicted_class === 'string') {
+      return result.predicted_class.toLowerCase();
+    }
+    
+    // If predicted_class is a number, map it using SENTIMENT_LABELS
+    if (typeof result.predicted_class === 'number') {
+      const SENTIMENT_LABELS = {
+        0: "positive",
+        1: "negative", 
+        2: "neutral",
+        3: "irrelevant"
+      };
+      return SENTIMENT_LABELS[result.predicted_class as keyof typeof SENTIMENT_LABELS] || "unknown";
+    }
+    
+    return "unknown";
+  };
+
+  // Analyze sentiment with dynamic API URL
   const analyzeSentiment = async (text?: string) => {
     const textToAnalyze = text || inputText;
     
@@ -125,31 +141,62 @@ const SentimentAnalyzer: React.FC = () => {
     setResult(null);
 
     try {
-      const response = await fetch(`${API_URL}/predict/${selectedModel}`, {
+      // Get the complete API endpoint for the selected model
+      const apiEndpoint = getApiEndpoint(selectedModel);
+      
+      console.log(`🎯 Making request to: ${apiEndpoint}`);
+      console.log(`📡 Model: ${selectedModel} on ${MODEL_INFO[selectedModel as keyof typeof MODEL_INFO].port}`);
+
+      // Special headers for ngrok
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+
+      // Add ngrok bypass header for 5-embedding model
+      if (selectedModel === '5-embedding') {
+        headers['ngrok-skip-browser-warning'] = 'true';
+      }
+
+      const response = await fetch(apiEndpoint, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify({ text: textToAnalyze }),
       });
 
       const data = await response.json();
       
       if (!response.ok) {
-        throw new Error(data.detail || `HTTP error! status: ${response.status}`);
+        // Handle different error formats
+        const errorMessage = data.detail || data.error || `HTTP error! status: ${response.status}`;
+        throw new Error(errorMessage);
       }
 
       if ('error' in data) {
         throw new Error(data.error);
       }
 
-      setResult(data as SentimentResult);
+      // Normalize the sentiment regardless of API response format
+      const normalizedSentiment = normalizeSentiment(data);
+
+      // Add model information to the result
+      const resultWithMeta = {
+        ...data,
+        sentiment: normalizedSentiment,  // ✅ Add normalized sentiment
+        model_used: selectedModel,
+        api_url: getApiUrl(selectedModel)
+      };
+
+      setResult(resultWithMeta as SentimentResult);
       if (text) {
         setInputText(text);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to analyze sentiment');
-      console.error('Error:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to analyze sentiment';
+      console.error(`❌ Error with ${selectedModel}:`, err);
+      
+      // Add helpful error context
+      const portInfo = selectedModel === '5-embedding' ? 'ngrok tunnel' : `port ${MODEL_INFO[selectedModel as keyof typeof MODEL_INFO].port}`;
+      setError(`${errorMessage} (Model: ${MODEL_INFO[selectedModel as keyof typeof MODEL_INFO].name} on ${portInfo})`);
     } finally {
       setLoading(false);
     }
@@ -205,16 +252,14 @@ const SentimentAnalyzer: React.FC = () => {
         {/* Header */}
         <div className="text-center mb-8 pt-8">
           <h1 className="text-4xl font-bold text-gray-800 mb-2">
-            Sentiment Analyzer
+            Multi-Model Sentiment Analyzer
           </h1>
           <p className="text-gray-600">
-            Multiple Model Architectures Available
+            Compare 4 different AI architectures
           </p>
-          {modelStatus && (
-            <p className="text-sm text-gray-500 mt-2">
-              {modelStatus.loaded_models} of {modelStatus.total_models} models loaded
-            </p>
-          )}
+          <p className="text-sm text-gray-500 mt-2">
+            All {availableModels.length} models available for testing
+          </p>
         </div>
 
         {/* Main Card */}
@@ -238,14 +283,17 @@ const SentimentAnalyzer: React.FC = () => {
                   <button
                     onClick={() => setDropdownOpen(!dropdownOpen)}
                     className="bg-gray-100 text-gray-700 rounded-lg px-3 py-2 hover:bg-gray-200 transition-colors flex items-center gap-2 text-sm font-medium"
-                    disabled={loading || availableModels.length === 0}
+                    disabled={loading}
                   >
-                    {MODEL_INFO[selectedModel]?.name || selectedModel}
+                    {MODEL_INFO[selectedModel as keyof typeof MODEL_INFO]?.name || selectedModel}
+                    {/* <span className="text-xs text-gray-500">
+                      :{MODEL_INFO[selectedModel as keyof typeof MODEL_INFO]?.port}
+                    </span> */}
                     <ChevronDown className={`w-4 h-4 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
                   </button>
                   
                   {dropdownOpen && (
-                    <div className="absolute bottom-full mb-2 right-0 w-64 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden">
+                    <div className="absolute bottom-full mb-2 right-0 w-96 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden">
                       <div className="py-1">
                         {availableModels.map((model) => (
                           <button
@@ -254,39 +302,28 @@ const SentimentAnalyzer: React.FC = () => {
                               setSelectedModel(model);
                               setDropdownOpen(false);
                             }}
-                            className={`w-full px-4 py-2 text-left hover:bg-gray-50 flex items-start gap-3 ${
+                            className={`w-full px-4 py-3 text-left hover:bg-gray-50 flex items-start gap-3 ${
                               selectedModel === model ? 'bg-blue-50' : ''
                             }`}
                           >
                             <div className="flex-1">
                               <div className="flex items-center gap-2">
                                 <span className="font-medium text-sm">
-                                  {MODEL_INFO[model]?.name || model}
+                                  {MODEL_INFO[model as keyof typeof MODEL_INFO]?.name || model}
                                 </span>
+                                {/* <span className="text-xs bg-gray-200 px-2 py-1 rounded">
+                                  :{MODEL_INFO[model as keyof typeof MODEL_INFO]?.port}
+                                </span> */}
                                 {selectedModel === model && (
                                   <Check className="w-4 h-4 text-blue-500" />
                                 )}
                               </div>
                               <span className="text-xs text-gray-500">
-                                {MODEL_INFO[model]?.description}
+                                {MODEL_INFO[model as keyof typeof MODEL_INFO]?.description}
                               </span>
                             </div>
                           </button>
                         ))}
-                        {modelStatus && Object.keys(modelStatus.failed_models).length > 0 && (
-                          <>
-                            <div className="border-t border-gray-200 mt-1 pt-1">
-                              <div className="px-4 py-1 text-xs text-gray-400">Unavailable:</div>
-                              {Object.keys(modelStatus.failed_models).map((model) => (
-                                <div key={model} className="px-4 py-1 opacity-50">
-                                  <div className="text-sm text-gray-500 line-through">
-                                    {MODEL_INFO[model]?.name || model}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </>
-                        )}
                       </div>
                     </div>
                   )}
@@ -295,7 +332,7 @@ const SentimentAnalyzer: React.FC = () => {
                 {/* Analyze Button */}
                 <button
                   onClick={() => analyzeSentiment()}
-                  disabled={loading || !inputText.trim() || availableModels.length === 0}
+                  disabled={loading || !inputText.trim()}
                   className="bg-blue-500 text-white rounded-lg px-4 py-2 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
                 >
                   {loading ? (
@@ -357,9 +394,11 @@ const SentimentAnalyzer: React.FC = () => {
                   </span>
                 </div>
 
-                {result.inference_time && (
+                {result.model_used && (
                   <p className="text-xs text-gray-500 mt-2">
-                    Analyzed by {MODEL_INFO[result.model_used]?.name || result.model_used} in {result.inference_time.toFixed(2)}s
+                    Analyzed by {MODEL_INFO[result.model_used as keyof typeof MODEL_INFO]?.name || result.model_used} 
+                    {result.inference_time && ` in ${result.inference_time.toFixed(2)}s`}
+                    {' '}({result.model_used === '5-embedding' ? 'ngrok tunnel' : `Port: ${MODEL_INFO[result.model_used as keyof typeof MODEL_INFO]?.port}`})
                   </p>
                 )}
               </div>
@@ -368,36 +407,58 @@ const SentimentAnalyzer: React.FC = () => {
               <div>
                 <h4 className="text-sm font-medium text-gray-700 mb-2">All Scores:</h4>
                 <div className="space-y-2">
-                  {result.probabilities && Object.entries(result.probabilities).map(([sentiment, score]) => (
-                    <div key={sentiment} className="flex items-center gap-2">
-                      <span className="w-20 text-sm text-gray-600">{capitalizeFirst(sentiment)}:</span>
-                      <div className="flex-1 bg-gray-200 rounded-full h-6 relative">
-                        <div
-                          className={`h-full rounded-full transition-all duration-500 ${
-                            sentiment === 'positive' ? 'bg-green-500' :
-                            sentiment === 'negative' ? 'bg-red-500' :
-                            sentiment === 'neutral' ? 'bg-gray-500' :
-                            'bg-blue-500'
-                          }`}
-                          style={{ width: `${(score as number) * 100}%` }}
-                        />
-                        <span className="absolute right-2 top-0 h-full flex items-center text-xs text-gray-700">
-                          {formatPercentage(score as number)}
-                        </span>
+                  {result.probabilities && Object.entries(result.probabilities).map(([classKey, score]) => {
+                    // Map class_X to sentiment names
+                    const sentimentMap: { [key: string]: string } = {
+                      'class_0': 'positive',
+                      'class_1': 'negative', 
+                      'class_2': 'neutral',
+                      'class_3': 'irrelevant'
+                    };
+                    const sentiment = sentimentMap[classKey] || classKey;
+                    
+                    return (
+                      <div key={classKey} className="flex items-center gap-2">
+                        <span className="w-20 text-sm text-gray-600">{capitalizeFirst(sentiment)}:</span>
+                        <div className="flex-1 bg-gray-200 rounded-full h-6 relative">
+                          <div
+                            className={`h-full rounded-full transition-all duration-500 ${
+                              sentiment === 'positive' ? 'bg-green-500' :
+                              sentiment === 'negative' ? 'bg-red-500' :
+                              sentiment === 'neutral' ? 'bg-gray-500' :
+                              'bg-blue-500'
+                            }`}
+                            style={{ width: `${(score as number) * 100}%` }}
+                          />
+                          <span className="absolute right-2 top-0 h-full flex items-center text-xs text-gray-700">
+                            {formatPercentage(score as number)}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
               {/* Processed Text (Debug) */}
               <details className="border-t pt-3">
                 <summary className="text-sm text-gray-500 cursor-pointer hover:text-gray-700">
-                  View processed text (debug)
+                  View processed text & API response (debug)
                 </summary>
-                <p className="mt-2 text-xs font-mono bg-gray-100 p-2 rounded">
-                  {result.processed_text}
-                </p>
+                <div className="mt-2 space-y-2">
+                  <div>
+                    <p className="text-xs font-semibold text-gray-600">Processed Text:</p>
+                    <p className="text-xs font-mono bg-gray-100 p-2 rounded">
+                      {result.processed_text}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-gray-600">Raw API Response:</p>
+                    <pre className="text-xs font-mono bg-gray-100 p-2 rounded overflow-x-auto">
+                      {JSON.stringify(result, null, 2)}
+                    </pre>
+                  </div>
+                </div>
               </details>
             </div>
           )}
@@ -405,13 +466,14 @@ const SentimentAnalyzer: React.FC = () => {
 
         {/* Info Card */}
         <div className="bg-white/50 rounded-lg p-4 text-sm text-gray-600">
-          <p className="font-semibold mb-1">ℹ️ About the models:</p>
-          <ul className="space-y-1 text-xs">
-            <li>• <strong>Enhanced BERT:</strong> BERT with attention mechanism for improved accuracy</li>
-            <li>• <strong>ELMo + BERT:</strong> Combines contextual ELMo with BERT embeddings</li>
-            <li>• <strong>ELMo Transformer:</strong> Alternative transformer architecture with ELMo</li>
-            <li>• <strong>5-Embedding:</strong> Multi-embedding approach (BERT, ELMo, GloVe, POS, Char)</li>
-            <li className="pt-1 text-gray-500">All models classify into: Positive, Negative, Neutral, or Irrelevant</li>
+          <p className="font-semibold mb-1">🚀 Model Architecture Comparison:</p>
+          <ul className="space-y-1 text-s">
+            <li>• <strong>Enhanced BERT:</strong> BERT with attention mechanism - balanced speed/accuracy</li>
+            <li>• <strong>ELMo + BERT:</strong> Combines contextual ELMo with BERT - high context awareness</li>
+            <li>• <strong>ELMo Transformer:</strong> Alternative transformer with ELMo - experimental architecture</li>
+            <li>• <strong>5-Embedding:</strong> BERT + ELMo + GloVe + POS + Character - most comprehensive</li>
+            <li className="pt-1 text-gray-500">🎯 Most models use: baseUrl/predict/modelName</li>
+            <li className="text-gray-500">🌐 5-Embedding uses: ngrok-url/predict (special deployment)</li>
           </ul>
         </div>
       </div>

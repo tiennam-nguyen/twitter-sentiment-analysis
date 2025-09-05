@@ -14,10 +14,8 @@ def predict_sentiment_enhanced_bert(model, text, tokenizer, device, max_length=1
     """Internal prediction function"""
     model.eval()
 
-    processed_text = intelligent_preprocess(text)
-
     encoding = tokenizer(
-        processed_text,
+        text,
         truncation=True,
         padding='max_length',
         max_length=max_length,
@@ -44,6 +42,6 @@ def predict_sentiment_enhanced_bert(model, text, tokenizer, device, max_length=1
             "class_3": float(probabilities[0][3])
         },
         "input_text": text,
-        "processed_text": processed_text
+        "processed_text": text
     }
 

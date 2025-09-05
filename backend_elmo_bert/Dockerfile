@@ -1,20 +1,20 @@
-# Dockerfile for elmo_bert microservice
-FROM python:3.10
+FROM python:3.12
 
-WORKDIR /app
+WORKDIR /src
 
-# Copy requirements and install dependencies
-COPY requirements.txt ./
-RUN apt-get update && apt-get install -y build-essential gcc && rm -rf /var/lib/apt/lists/*
+# Copy requirements first for better caching
+COPY requirements.txt /src/requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY .env .env
-
 # Copy source code
-COPY . .
+COPY server.py /src/server.py
+COPY models/ /src/models/
+COPY utils/ /src/utils/
+COPY .env /src/.env
 
-# Expose port (change if needed)
+# Create model cache directory (models will be downloaded from Google Drive)
+RUN mkdir -p /src/model_cache
+
 EXPOSE 8889
 
-# Start FastAPI server
 CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8889"]
