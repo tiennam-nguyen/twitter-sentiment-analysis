@@ -8,6 +8,10 @@ from pydantic import BaseModel
 import uvicorn
 import time
 
+from dotenv import load_dotenv
+load_dotenv()
+# ...existing code...
+
 # Import our custom modules
 from utils import (
     predict_sentiment_elmo_bert,

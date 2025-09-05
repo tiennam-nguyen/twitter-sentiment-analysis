@@ -1,6 +1,5 @@
 import torch
 from transformers import BertTokenizer
-from models import EnhancedBERTModel, ELMOBert, ELMoTransformerModel, FiveEmbeddingModel
 from utils import DriveModelLoader
 
 
@@ -29,6 +28,7 @@ def load_tokenizer():
 def load_elmo_bert_model(device):
     """Load ELMo+BERT model from Google Drive"""
     print("🏗️ Initializing ELMo+BERT model architecture...")
+    from models.elmo_bert import ELMOBert
     model = ELMOBert(num_classes=4)
     
     print("📦 Loading ELMo+BERT model weights from Google Drive...")

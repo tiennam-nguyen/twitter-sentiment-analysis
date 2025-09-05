@@ -1,4 +1,3 @@
-from utils.model_loader import load_elmo_bert_model
 
 # ...existing code for elmo_bert model...
 """

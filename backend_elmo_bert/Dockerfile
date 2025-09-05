@@ -1,11 +1,14 @@
 # Dockerfile for elmo_bert microservice
-FROM python:3.10-slim
+FROM python:3.10
 
 WORKDIR /app
 
 # Copy requirements and install dependencies
 COPY requirements.txt ./
+RUN apt-get update && apt-get install -y build-essential gcc && rm -rf /var/lib/apt/lists/*
 RUN pip install --no-cache-dir -r requirements.txt
+
+COPY .env .env
 
 # Copy source code
 COPY . .
