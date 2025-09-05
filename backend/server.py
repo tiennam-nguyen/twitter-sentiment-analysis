@@ -10,18 +10,13 @@ import time
 
 # Import our custom modules
 from utils import (
-    predict_sentiment_enhanced_bert, 
-    predict_sentiment_elmo_bert, 
+    
     predict_sentiment_elmo_transformer,
-    predict_sentiment_5_embedding,
-    predict_sentiment_5_embedding_optimized,
-    initialize_5_embedding_dependencies,
+   
     setup_device,
     load_tokenizer,
-    load_enhanced_bert_model,
-    load_elmo_bert_model,
-    load_elmo_transformer_model,
-    load_5_embedding_model
+    
+    load_elmo_transformer_model
 )
 
 # ============== MODEL INITIALIZATION WITH GRACEFUL DEGRADATION ==============
@@ -35,20 +30,11 @@ print("✅ Device and tokenizer setup complete")
 models = {}
 failed_models = {}
 
-# Initialize 5-embedding dependencies at startup
-print("🚀 Initializing 5-embedding dependencies...")
-embedding_5_dependencies = initialize_5_embedding_dependencies()
-if embedding_5_dependencies.get('initialized', False):
-    print("✅ 5-embedding dependencies initialized successfully!")
-else:
-    print(f"❌ 5-embedding dependencies failed: {embedding_5_dependencies.get('error', 'Unknown error')}")
+
 
 # Model loader configuration
 model_loaders = {
-    "enhanced-bert": load_enhanced_bert_model,
-    "elmo-bert": load_elmo_bert_model,
-    "elmo-transformer": load_elmo_transformer_model,
-    "5-embedding": load_5_embedding_model
+    "elmo-transformer": load_elmo_transformer_model
 }
 
 print("🚀 Loading models with graceful degradation...")

@@ -12,10 +12,7 @@ torchaudio
 transformers
 tokenizers
 
-# TensorFlow for ELMo embeddings
-tensorflow>=2.16.0
-tensorflow-hub
-tensorflow-text
+
 
 # Data processing
 pandas
