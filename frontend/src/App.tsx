@@ -27,7 +27,7 @@ const MODEL_APIS = {
   'enhanced-bert': 'http://localhost:8888',
   'elmo-bert': 'http://localhost:8889',
   'elmo-transformer': 'http://localhost:8890',
-  '5-embedding': 'https://1a8594aead5d.ngrok-free.app'  // ✅ Special ngrok URL
+  '5-embedding': 'https://96b8d52563f2.ngrok-free.app'  // ✅ Special ngrok URL
 };
 
 // Model descriptions
@@ -70,10 +70,10 @@ const SentimentAnalyzer: React.FC = () => {
   const availableModels = ['enhanced-bert', 'elmo-bert', 'elmo-transformer', '5-embedding'];
   
   const [examples] = useState<string[]>([
-    "I absolutely love this product! Best purchase ever!",
-    "This is terrible. Complete waste of money. Never buying again.",
-    "It's okay, nothing special but does the job.",
-    "The weather is nice today"
+    "Not gonna lie, didn't think I wouldn't dislike Borderlands this much.",
+    "Oh great, another Facebook update that nobody asked for. Just what we needed!",
+    "@Meta fix your platform #FacebookDown #Frustrated #TechFail",
+    "Twitter's new feature rollout includes: 1) Extended video uploads 2) Better threading UI 3) Improved search functionality. Some users like it, others don't. Time will tell if these changes stick."
   ]);
 
   // Close dropdown when clicking outside
@@ -108,20 +108,27 @@ const SentimentAnalyzer: React.FC = () => {
 
   // Add this function to handle both string and number sentiment responses
   const normalizeSentiment = (result: any) => {
-    // If predicted_class is already a string, use it directly
-    if (typeof result.predicted_class === 'string') {
-      return result.predicted_class.toLowerCase();
+    // First check if sentiment field exists (Enhanced BERT format)
+    if (result.sentiment && typeof result.sentiment === 'string') {
+      return result.sentiment.toLowerCase();
     }
     
-    // If predicted_class is a number, map it using SENTIMENT_LABELS
-    if (typeof result.predicted_class === 'number') {
-      const SENTIMENT_LABELS = {
-        0: "positive",
-        1: "negative", 
-        2: "neutral",
-        3: "irrelevant"
-      };
-      return SENTIMENT_LABELS[result.predicted_class as keyof typeof SENTIMENT_LABELS] || "unknown";
+    // Then check predicted_class field (5-Embedding format)
+    if (result.predicted_class) {
+      if (typeof result.predicted_class === 'string') {
+        return result.predicted_class.toLowerCase(); // Convert "Neutral" -> "neutral"
+      }
+      
+      // Fallback: if predicted_class is a number, map it
+      if (typeof result.predicted_class === 'number') {
+        const SENTIMENT_LABELS = {
+          0: "positive",
+          1: "negative", 
+          2: "neutral",
+          3: "irrelevant"
+        };
+        return SENTIMENT_LABELS[result.predicted_class as keyof typeof SENTIMENT_LABELS] || "unknown";
+      }
     }
     
     return "unknown";
@@ -164,6 +171,7 @@ const SentimentAnalyzer: React.FC = () => {
       });
 
       const data = await response.json();
+      console.log(data);
       
       if (!response.ok) {
         // Handle different error formats
@@ -443,20 +451,13 @@ const SentimentAnalyzer: React.FC = () => {
               {/* Processed Text (Debug) */}
               <details className="border-t pt-3">
                 <summary className="text-sm text-gray-500 cursor-pointer hover:text-gray-700">
-                  View processed text & API response (debug)
+                  View processed text
                 </summary>
                 <div className="mt-2 space-y-2">
                   <div>
-                    <p className="text-xs font-semibold text-gray-600">Processed Text:</p>
                     <p className="text-xs font-mono bg-gray-100 p-2 rounded">
                       {result.processed_text}
                     </p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold text-gray-600">Raw API Response:</p>
-                    <pre className="text-xs font-mono bg-gray-100 p-2 rounded overflow-x-auto">
-                      {JSON.stringify(result, null, 2)}
-                    </pre>
                   </div>
                 </div>
               </details>

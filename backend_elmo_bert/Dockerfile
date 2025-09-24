@@ -15,6 +15,6 @@ COPY .env /src/.env
 # Create model cache directory (models will be downloaded from Google Drive)
 RUN mkdir -p /src/model_cache
 
-EXPOSE 8889
+EXPOSE 8888
 
-CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8889"]
+CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8888", "--reload"]
