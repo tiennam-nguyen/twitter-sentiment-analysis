@@ -44,7 +44,8 @@ twitter_sentiment_bert_only/
 │   ├── package.json                  # Node.js dependencies
 │   ├── tailwind.config.ts            # Tailwind CSS configuration
 │   └── ...
-└── README.md
+├── README.md
+└── PowerPoint_Project.pdf
 ```
 
 ## 🛠️ Setup Instructions
