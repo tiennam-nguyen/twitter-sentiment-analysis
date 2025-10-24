@@ -307,4 +307,4 @@ GitHub: [@VoMinhKhoii](https://www.google.com/search?q=https://github.com/VoMinh
 
 -----
 
-\<p align="center"\>Ho Chi Minh City – 2025\</p\>
+</p><p align="center">Ho Chi Minh City – 2025</p>
