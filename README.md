@@ -285,8 +285,8 @@ This project is licensed under the MIT License - see the `LICENSE` file for deta
 ## 👥 Team Members ("5 anh em siêu nhân")
 
   * Vũ Trí Khải
-  * Võ Minh Khôi - [@VoMinhKhoii](https://www.google.com/search?q=https://github.com/VoMinhKhoii)
-  * Nguyễn Tiến Nam - [@tiennam-nguyen](https://www.google.com/search?q=https://github.com/tiennam-nguyen)
+  * Võ Minh Khôi - [VoMinhKhoii](https://github.com/VoMinhKhoii)
+  * Nguyễn Tiến Nam - [tiennam-nguyen](https://github.com/tiennam-nguyen)
   * Hoàng Minh Hải
   * Đoàn Trần Quốc Việt
 
@@ -303,7 +303,7 @@ This project is licensed under the MIT License - see the `LICENSE` file for deta
 ## 📧 Contact
 
 For questions or support, please contact:
-GitHub: [@VoMinhKhoii](https://www.google.com/search?q=https://github.com/VoMinhKhoii)
+GitHub: [@VoMinhKhoii](https://github.com/VoMinhKhoii)
 
 -----
 
